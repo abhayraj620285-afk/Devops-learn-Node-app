@@ -7,19 +7,13 @@ pipeline {
     EC2_USER = "ubuntu"
   }
 
- stage('Checkout') {
-
-  steps {
-    git branch: 'main',
-        credentialsId: 'github-token',
-        url: 'https://github.com/abhayraj620285-afk/Devops-learn-Node-app'
-  }
-} stages {
+  stages {
 
     stage('Checkout') {
       steps {
         git branch: 'main',
-            url: 'https://github.com/abhayraj01/devops-project1'
+            credentialsId: 'github-token',
+            url: 'https://github.com/abhayraj620285-afk/Devops-learn-Node-app'
       }
     }
 
@@ -68,6 +62,7 @@ pipeline {
         }
       }
     }
+
   }
 
   post {
