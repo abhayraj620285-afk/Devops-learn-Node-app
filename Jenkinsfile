@@ -7,7 +7,14 @@ pipeline {
     EC2_USER = "ubuntu"
   }
 
-  stages {
+ stage('Checkout') {
+
+  steps {
+    git branch: 'main',
+        credentialsId: 'github-token',
+        url: 'https://github.com/abhayraj620285-afk/Devops-learn-Node-app'
+  }
+} stages {
 
     stage('Checkout') {
       steps {
