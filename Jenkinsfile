@@ -18,12 +18,6 @@ pipeline {
     }
 
     stage('Install and test') {
-      agent {
-        docker {
-          image 'node:20-alpine'
-          reuseNode true
-        }
-      }
       steps {
         sh 'npm install'
         sh 'npm test'
