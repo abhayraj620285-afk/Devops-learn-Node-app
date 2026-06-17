@@ -16,16 +16,17 @@ pipeline {
       }
     }
 
-    stage('Debug') {
+    stage('Build and push Docker image') {
       steps {
-        sh 'pwd'
-        sh 'ls -la'
-      }
-    }
-
-    stage('Build Docker image') {
-      steps {
-        sh "docker buildx build --platform linux/amd64,linux/arm64 -t ${IMAGE}:${BUILD_NUMBER} -t ${IMAGE}:latest --push ."
+        withCredentials([usernamePassword(
+          credentialsId: 'dockerhub',
+          usernameVariable: 'DOCKER_USER',
+          passwordVariable: 'DOCKER_PASS'
+        )]) {
+          sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+          sh "docker buildx build --platform linux/amd64,linux/arm64 -t ${IMAGE}:${BUILD_NUMBER} -t ${IMAGE}:latest --push ."
+          sh 'docker logout'
+        }
       }
     }
 
