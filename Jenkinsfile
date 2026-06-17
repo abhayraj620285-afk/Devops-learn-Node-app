@@ -16,6 +16,13 @@ pipeline {
       }
     }
 
+    stage('Debug') {
+      steps {
+        sh 'pwd'
+        sh 'ls -la'
+      }
+    }
+
     stage('Build Docker image') {
       steps {
         sh "docker buildx build --platform linux/amd64,linux/arm64 -t ${IMAGE}:${BUILD_NUMBER} -t ${IMAGE}:latest --push ."
