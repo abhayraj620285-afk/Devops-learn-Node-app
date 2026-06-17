@@ -1,0 +1,18 @@
+replicaCount: 2
+
+image:
+  repository: abhayraj01/devops-learn-node-app
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: NodePort
+  port: 80
+
+ingress:
+  enabled: false
+
+resources: {}
+
+autoscaling:
+  enabled: false

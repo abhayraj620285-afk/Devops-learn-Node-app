@@ -2,9 +2,8 @@ pipeline {
   agent any
 
   environment {
-    IMAGE    = "abhayraj01/devops-learn-node-app"
-    EC2_IP   = "51.21.198.177"
-    EC2_USER = "ubuntu"
+    IMAGE     = "abhayraj01/devops-learn-node-app"
+    NAMESPACE = "devops-project3"
   }
 
   stages {
@@ -17,56 +16,39 @@ pipeline {
       }
     }
 
-    stage('Install and test') {
-      steps {
-        sh 'npm install'
-        sh 'npm test'
-      }
-    }
-
     stage('Build Docker image') {
       steps {
-        sh "docker build -t ${IMAGE}:${BUILD_NUMBER} ."
-        sh "docker tag ${IMAGE}:${BUILD_NUMBER} ${IMAGE}:latest"
+        sh "docker buildx build --platform linux/amd64,linux/arm64 -t ${IMAGE}:${BUILD_NUMBER} -t ${IMAGE}:latest --push ."
       }
     }
 
-    stage('Push to Docker Hub') {
+    stage('Load image into minikube') {
       steps {
-        withCredentials([usernamePassword(
-          credentialsId: 'dockerhub',
-          usernameVariable: 'DOCKER_USER',
-          passwordVariable: 'DOCKER_PASS'
-        )]) {
-          sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-          sh "docker push ${IMAGE}:${BUILD_NUMBER}"
-          sh "docker push ${IMAGE}:latest"
-        }
+        sh "minikube image load ${IMAGE}:latest"
       }
     }
 
-    stage('Deploy to EC2') {
+    stage('Deploy with Helm') {
       steps {
-        sshagent(['ec2-ssh']) {
-          sh """
-            ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
-              docker pull ${IMAGE}:latest &&
-              docker stop myapp 2>/dev/null || true &&
-              docker rm   myapp 2>/dev/null || true &&
-              docker run -d --name myapp \
-                --restart=always \
-                -p 80:3000 \
-                ${IMAGE}:latest
-            '
-          """
-        }
+        sh """
+          helm upgrade myapp ./myapp-chart \
+            --namespace ${NAMESPACE} \
+            --set image.tag=${BUILD_NUMBER} \
+            --set image.pullPolicy=Never
+        """
+      }
+    }
+
+    stage('Verify deployment') {
+      steps {
+        sh "kubectl rollout status deployment/myapp -n ${NAMESPACE}"
       }
     }
 
   }
 
   post {
-    success { echo 'Deployed successfully!' }
+    success { echo 'Deployed successfully to minikube!' }
     failure { echo 'Pipeline failed — check logs above' }
   }
 }
