@@ -30,33 +30,32 @@ pipeline {
       }
     }
 
-    stage('Load image into minikube') {
-      steps {
-        sh "minikube image load ${IMAGE}:latest"
-      }
-    }
-
     stage('Deploy with Helm') {
       steps {
         sh """
+          export KUBECONFIG=/var/jenkins_home/.kube/config
           helm upgrade myapp ./myapp-chart \
             --namespace ${NAMESPACE} \
-            --set image.tag=${BUILD_NUMBER} \
-            --set image.pullPolicy=Never
+            --set image.tag=latest \
+            --set image.pullPolicy=Always \
+            --set image.repository=${IMAGE}
         """
       }
     }
 
     stage('Verify deployment') {
       steps {
-        sh "kubectl rollout status deployment/myapp -n ${NAMESPACE}"
+        sh """
+          export KUBECONFIG=/var/jenkins_home/.kube/config
+          kubectl rollout status deployment/myapp -n ${NAMESPACE}
+        """
       }
     }
 
   }
 
   post {
-    success { echo 'Deployed successfully to minikube!' }
+    success { echo 'Deployed successfully!' }
     failure { echo 'Pipeline failed — check logs above' }
   }
 }
